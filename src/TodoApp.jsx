@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
-// URL da sua API
+
 const API_URL = 'http://localhost:3000';
 
 function TodoApp() {
   const [tasks, setTasks] = useState([]);
-  const [newTaskName, setNewTaskName] = useState(''); // Estado para o input]
-  // Guarda o ID da tarefa que está sendo editada
-  const [editingTaskId, setEditingTaskId] = useState(null); 
-  // Guarda o texto do input de edição
-  const [editingTaskName, setEditingTaskName] = useState('');
+  const [newTaskName, setNewTaskName] = useState('');
 
-  // -----------------------------------------------------------------
-  // 1. (GET) BUSCAR TAREFAS QUANDO O COMPONENTE CARREGA
-  // -----------------------------------------------------------------
+  
+  //(GET)
+  
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -26,18 +22,17 @@ function TodoApp() {
     };
     
     fetchTasks();
-  }, []); // [] = Rodar apenas uma vez
+  }, []);
 
-  // -----------------------------------------------------------------
-  // 2. (POST) ADICIONAR NOVA TAREFA
-  // -----------------------------------------------------------------
+  
+  //(POST)
+  
   const handleAddTask = async (e) => {
-    e.preventDefault(); // Impede o recarregamento da página do formulário
-    if (!newTaskName.trim()) return; // Não adiciona se estiver vazio
-
+    e.preventDefault();
+    if (!newTaskName.trim()) return;
     const newTask = {
       nome: newTaskName,
-      done: false // Tarefas novas sempre começam como "não feitas"
+      done: false
     };
 
     try {
@@ -51,28 +46,27 @@ function TodoApp() {
         throw new Error('Falha ao criar tarefa');
       }
 
-      // IMPORTANTE: Assumindo que seu back-end retorna a tarefa criada
-      // Veja a observação abaixo!
+      
       const createdTask = await response.json(); 
 
-      // Adiciona a nova tarefa à lista no estado do React
+      
       setTasks([...tasks, createdTask]);
-      setNewTaskName(''); // Limpa o campo de input
+      setNewTaskName('');
 
     } catch (error) {
       console.error("Erro ao adicionar tarefa:", error);
     }
   };
 
-  // -----------------------------------------------------------------
-  // 3. (PUT) ATUALIZAR STATUS DA TAREFA (MARCAR COMO FEITA)
-  // -----------------------------------------------------------------
+  
+  //(PUT)
+  
   const handleToggleDone = async (id, currentDoneStatus) => {
     try {
       const response = await fetch(`${API_URL}/task/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ done: !currentDoneStatus }) // Envia o status invertido
+        body: JSON.stringify({ done: !currentDoneStatus })
       });
 
       if (!response.ok) {
@@ -80,9 +74,9 @@ function TodoApp() {
       }
 
       const data = await response.json();
-      const updatedTask = data.produto; // 'produto' foi como você chamou no seu back-end
+      const updatedTask = data.produto;
 
-      // Atualiza a lista no estado
+      
       setTasks(tasks.map(task => 
         task._id === id ? updatedTask : task
       ));
@@ -92,9 +86,9 @@ function TodoApp() {
     }
   };
 
-  // -----------------------------------------------------------------
-  // 4. (DELETE) EXCLUIR TAREFA
-  // -----------------------------------------------------------------
+  
+  //(DELETE)
+  
   const handleDelete = async (id) => {
     try {
       const response = await fetch(`${API_URL}/task/${id}`, {
@@ -105,7 +99,7 @@ function TodoApp() {
         throw new Error('Falha ao deletar tarefa');
       }
       
-      // Remove a tarefa da lista no estado
+      
       setTasks(tasks.filter(task => task._id !== id));
 
     } catch (error) {
@@ -113,9 +107,7 @@ function TodoApp() {
     }
   };
 
-  // -----------------------------------------------------------------
   // RENDERIZAÇÃO DO COMPONENTE (JSX)
-  // -----------------------------------------------------------------
   return (
     <div>
       <h1>Lista de Tarefas (CRUD Completo)</h1>
