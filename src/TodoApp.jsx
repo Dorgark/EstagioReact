@@ -1,154 +1,135 @@
 import React, { useState, useEffect } from 'react';
-
-
-const API_URL = 'http://localhost:3000';
-
+import { getTasks, createTask, updateTask, deleteTask } from './services/api';
+import './TodoApp.css'
 function TodoApp() {
   const [tasks, setTasks] = useState([]);
   const [newTaskName, setNewTaskName] = useState('');
+  const [error, setError] = useState(null);
 
-  
-  //(GET)
-  
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await fetch(`${API_URL}/tasks`);
-        const data = await response.json();
-        setTasks(data);
-      } catch (error) {
-        console.error("Erro ao buscar tarefas:", error);
-      }
-    };
-    
-    fetchTasks();
+    loadTasks();
   }, []);
 
-  
-  //(POST)
-  
+  const loadTasks = async () => {
+    try {
+      const data = await getTasks();
+      setTasks(data);
+    } catch (err) {
+      console.error(err);
+      setError("Não foi possível carregar as tarefas.");
+    }
+  };
+
+  // ADICIONAR
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!newTaskName.trim()) return;
-    const newTask = {
-      nome: newTaskName,
-      done: false
-    };
 
     try {
-      const response = await fetch(`${API_URL}/task`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTask)
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao criar tarefa');
-      }
-
-      
-      const createdTask = await response.json(); 
-
-      
-      setTasks([...tasks, createdTask]);
+      const createdTask = await createTask(newTaskName);
+      setTasks([...tasks, createdTask]); // Adiciona na lista visualmente
       setNewTaskName('');
-
-    } catch (error) {
-      console.error("Erro ao adicionar tarefa:", error);
+      setError(null);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
-  
-  //(PUT)
-  
-  const handleToggleDone = async (id, currentDoneStatus) => {
+  // EDITAR NOME
+  const handleEdit = async (task) => {
+    const newName = prompt("Novo nome da tarefa:", task.name);
+    if (!newName || newName === task.name) return;
+
     try {
-      const response = await fetch(`${API_URL}/task/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ done: !currentDoneStatus })
-      });
+      const updatedTask = await updateTask(task._id, { name: newName });
 
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar tarefa');
-      }
-
-      const data = await response.json();
-      const updatedTask = data.produto;
-
-      
-      setTasks(tasks.map(task => 
-        task._id === id ? updatedTask : task
+      setTasks(tasks.map(t => 
+        t._id === task._id ? updatedTask : t
       ));
-
-    } catch (error) {
-      console.error("Erro ao atualizar tarefa:", error);
+      
+    } catch (err) {
+      console.error("Erro ao editar", err);
+      alert("Não foi possível editar a tarefa");
     }
   };
 
-  
-  //(DELETE)
-  
+
+
+
+  // ATUALIZAR (Toggle Done)
+  const handleToggleDone = async (task) => {
+    try {
+      // Chamamos a API passando o ID e o INVERSO do status atual
+      const updatedTask = await updateTask(task._id, {done: !task.done});
+      
+      // Atualiza apenas a tarefa que mudou no estado
+      setTasks(tasks.map(t => t._id === task._id ? updatedTask : t));
+    } catch (err) {
+      console.error("Erro ao atualizar", err);
+    }
+  };
+
+  // DELETAR
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/task/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao deletar tarefa');
-      }
-      
-      
+      await deleteTask(id);
+      // Remove da lista visualmente
       setTasks(tasks.filter(task => task._id !== id));
-
-    } catch (error) {
-      console.error("Erro ao deletar tarefa:", error);
+    } catch (err) {
+      console.error("Erro ao deletar", err);
     }
   };
 
-  // RENDERIZAÇÃO DO COMPONENTE (JSX)
   return (
-    <div>
-      <h1>Lista de Tarefas (CRUD Completo)</h1>
-
-      {/* Formulário de Criação (POST) */}
+    <div class="mainDiv">
+      <div class="sideDiv">
+        <h1>Lista de Tarefas</h1>
+      </div>
       <form onSubmit={handleAddTask}>
         <input 
           type="text" 
           value={newTaskName}
           onChange={(e) => setNewTaskName(e.target.value)}
           placeholder="Digite uma nova tarefa..."
+          style={{ padding: '8px', marginRight: '5px' }}
         />
-        <button type="submit">Adicionar</button>
+        <button type="submit" style={{ padding: '8px' }}>Adicionar</button>
       </form>
 
-      {/* Lista de Tarefas (GET, PUT, DELETE) */}
-      <ul>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
         {tasks.map(task => (
           <li 
             key={task._id} 
             style={{ 
-              textDecoration: task.done ? 'line-through' : 'none',
-              margin: '10px 0'
+              display: 'flex', 
+              alignItems: 'center', 
+              marginBottom: '10px',
+              background: '#585858ff',
+              padding: '10px'
             }}
           >
-            {/* Nome da Tarefa */}
-            <span onClick={() => handleToggleDone(task._id, task.done)} style={{ cursor: 'pointer' }}>
-              {task.nome}
-            </span>
+            <span 
+              onClick={() => handleToggleDone(task)} 
+              style={{ 
+                flexGrow: 1,
+                textDecoration: task.done ? 'line-through' : 'none',
+                cursor: 'pointer',
+                color: task.done ? '#949494ff' : '#f5f5f5ff'
+              }}
+            >{task.name}</span>
             
-            {/* Botão de Toggle (PUT) */}
             <button 
-              onClick={() => handleToggleDone(task._id, task.done)} 
-              style={{ margin: '0 5px' }}
+              onClick={() => handleEdit(task)} 
+              style={{ background: '#bbbbbbff', color: 'white', border: 'none',border: 'none', padding: '5px 10px',margin:'8px', cursor:'pointer' }}
             >
-              {task.done ? 'Desfazer' : 'Concluir'}
+              ✏️
             </button>
             
-            {/* Botão de Excluir (DELETE) */}
-            <button onClick={() => handleDelete(task._id)}>
-              Excluir
+            <button 
+              onClick={() => handleDelete(task._id)}
+              style={{ background: '#bbbbbbff', color: 'white', border: 'none', padding: '5px 10px',margin:'8px', cursor:'pointer' }}
+            >
+              ❌
             </button>
           </li>
         ))}
