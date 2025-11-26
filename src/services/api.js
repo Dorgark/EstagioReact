@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://todolistbackend-seven.vercel.app';
 
 const handleResponse = async (response) => {
   if (!response.ok) {
