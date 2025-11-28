@@ -35,15 +35,6 @@ export const updateTask = async (id, updates) =>{
   return handleResponse(response)
 }
 
-/*export const updateTaskStatus = async (id, newStatus) => {
-  const response = await fetch(`${API_URL}/task/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ done: newStatus }),
-  });
-  return handleResponse(response);
-};*/
-
 export const deleteTask = async (id) => {
   const response = await fetch(`${API_URL}/task/${id}`, {
     method: 'DELETE',
